@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: argo-rollouts
+  namespace: argocd
+spec:
+  sourceRepos:
+  - https://github.com/mlkrtk/argocd-bootstrapping.git
+  - https://argoproj.github.io/argo-helm
+  destinations:
+  - server: "*"
+    namespace: "*"
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  description: Argo Rollouts
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+  roles:

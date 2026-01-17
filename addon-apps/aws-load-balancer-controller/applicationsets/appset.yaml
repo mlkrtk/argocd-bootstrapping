@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+                  provider: "aws"
+              values:
+                helmchart_url: https://aws.github.io/eks-charts
+                helmchart_version: 1.4.3
+                helmchart_name: aws-load-balancer-controller
+                common_app_values: |
+                  enabled: true
+                  autoDiscoverAwsRegion: true
+                  autoDiscoverAwsVpcID: true
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+                  env: "dev"
+              values:
+                helmchart_version: 1.4.8
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+                  env: "qa"
+              values:
+                helmchart_version: 1.4.8                         
+          - git:
+              repoURL: https://github.com/mlkrtk/argocd-bootstrapping.git
+              revision: dev
+              files:
+              - path: "addon-apps/aws-load-balancer-controller/cluster-config/*/config.yaml"             
+
+  template:
+    metadata:
+      name: 'aws-load-balancer-controller-{{name}}'
+      labels:
+        appset: aws-load-balancer-controller
+        env: '{{metadata.labels.env}}'
+      annotations:
+        helmchart_version: '{{values.helmchart_version}}'
+        helmchart_name: '{{values.helmchart_name}}'
+    spec:
+      project: aws-load-balancer-controller
+      source:
+        repoURL: '{{values.helmchart_url}}'
+        targetRevision: '{{values.helmchart_version}}' 
+        chart: '{{values.helmchart_name}}'
+        helm:
+          values: |
+            {{values.common_app_values}}
+            {{values.cluster_app_values}}
+      destination:
+        name: '{{name}}'
+        namespace: aws-load-balancer-controller
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - Validate=true
+          - PrunePropagationPolicy=foreground
+          - CreateNamespace=true
+          - PruneLast=true
+          - preserveResourcesOnDeletion=true
+        retry:
+          limit: 2
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

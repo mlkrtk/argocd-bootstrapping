@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: opq-base-root
+  namespace: argocd
+spec:
+  sourceRepos:
+  - https://github.com/mlkrtk/argocd-bootstrapping.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  description: opq base root
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"

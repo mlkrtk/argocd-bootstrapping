@@ -1,0 +1,15 @@
+name: opq-dev
+
+### Appends to Helm values ###
+values: 
+  cluster_app_values: |
+      clusterName: opq-dev
+      serviceAccount:
+        name: "aws-load-balancer-controller"
+        annotations:
+          eks.amazonaws.com/role-arn: "arn:aws:iam::891543987898:role/aws-load-balancer-controller-opq-dev"
+      image:
+        repository: "602401143452.dkr.ecr.eu-central-1.amazonaws.com/amazon/aws-load-balancer-controller"
+
+### Overrides Helm Chart version
+#  helmchart_version: 1.4.3

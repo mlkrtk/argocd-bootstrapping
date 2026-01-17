@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+spec:
+  sourceRepos:
+  - https://github.com/mlkrtk/argocd-bootstrapping.git
+  - https://aws.github.io/eks-charts
+  destinations:
+  - server: "*"
+    namespace: "*"
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  description: AWS Load Balancer Controller
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+  roles:

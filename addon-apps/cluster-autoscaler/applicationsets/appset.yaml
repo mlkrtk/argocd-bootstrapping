@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-autoscaler
+  namespace: argocd
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  project/opq: "true"
+                  cluster-addons: "true"
+                  provider: "aws"
+              values:
+                helmchart_url: https://kubernetes.github.io/autoscaler
+                helmchart_version: 9.16.2
+                helmchart_name: cluster-autoscaler
+                common_app_values: |
+                  replicaCount: 1
+          - clusters:
+              selector:
+                matchLabels:
+                  project/opq: "true"
+                  cluster-addons: "true"
+                  env: "dev"
+              values:
+                helmchart_version: 9.38.0
+          - clusters:
+              selector:
+                matchLabels:
+                  project/opq: "true"
+                  cluster-addons: "true"
+                  env: "qa"
+              values:
+                helmchart_version: 9.38.0
+          - git:
+              repoURL: https://github.com/mlkrtk/argocd-bootstrapping.git
+              revision: dev
+              files:
+              - path: "addon-apps/cluster-autoscaler/cluster-config/*/config.yaml"             
+
+  template:
+    metadata:
+      name: 'cluster-autoscaler-{{name}}'
+      labels:
+        appset: cluster-autoscaler
+        env: '{{metadata.labels.env}}'
+      annotations:
+        helmchart_version: '{{values.helmchart_version}}'
+        helmchart_name: '{{values.helmchart_name}}'
+    spec:
+      project: cluster-autoscaler
+      source:
+        repoURL: '{{values.helmchart_url}}'
+        targetRevision: '{{values.helmchart_version}}' 
+        chart: '{{values.helmchart_name}}'
+        helm:
+          values: |
+            {{values.common_app_values}}
+            {{values.cluster_app_values}}
+      destination:
+        name: '{{name}}'
+        namespace: kube-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - Validate=true
+          - PrunePropagationPolicy=foreground
+          - CreateNamespace=false
+          - PruneLast=true
+        retry:
+          limit: 2
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

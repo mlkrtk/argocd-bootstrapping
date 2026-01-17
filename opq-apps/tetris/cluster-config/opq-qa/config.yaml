@@ -1,0 +1,6 @@
+name: opq-qa
+
+### Kustomize overlay path and namespace ###
+values: 
+  kustomize_path: tetris/overlays/qa
+  namespace: qa

@@ -1,0 +1,6 @@
+name: opq-dev
+
+### Kustomize overlay path and namespace ###
+values: 
+  kustomize_path: tetris/overlays/dev
+  namespace: dev

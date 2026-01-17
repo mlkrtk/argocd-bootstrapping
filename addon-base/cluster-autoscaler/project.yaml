@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cluster-autoscaler
+  namespace: argocd
+spec:
+  sourceRepos:
+  - https://github.com/mlkrtk/argocd-bootstrapping.git
+  - https://kubernetes.github.io/autoscaler
+  destinations:
+  - server: "*"
+    namespace: "*"
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  description: "Scales Kubernetes worker nodes within autoscaling groups"
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+  roles:

@@ -1,0 +1,13 @@
+name: opq-dev
+
+### Appends to Helm values ###
+values: 
+  cluster_app_values: |
+          serviceAccount:
+            create: true
+            name: external-secrets
+            annotations:
+              eks.amazonaws.com/role-arn: arn:aws:iam::891543987898:role/external-secrets-opq-dev
+
+### Overrides Helm Chart version
+  # helmchart_version: 1.4.3

@@ -1,0 +1,78 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argo-rollouts
+  namespace: argocd
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+              values:
+                helmchart_url: https://argoproj.github.io/argo-helm
+                helmchart_version: 2.21.0
+                helmchart_name: argo-rollouts
+                common_app_values: |
+                  dashboard.enabled: true
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+                  env: "dev"
+              values:
+                helmchart_version: 2.23.0
+          - clusters:
+              selector:
+                matchLabels:
+                  cluster-addons: "true"
+                  env: "qa"
+              values:
+                helmchart_version: 2.23.0
+          - git:
+              repoURL: https://github.com/mlkrtk/argocd-bootstrapping.git
+              revision: dev
+              files:
+              - path: "addon-apps/argo-rollouts/cluster-config/*/config.yaml"             
+
+  template:
+    metadata:
+      name: 'argo-rollouts-{{name}}'
+      labels:
+        appset: argo-rollouts
+        env: '{{metadata.labels.env}}'
+      annotations:
+        helmchart_version: '{{values.helmchart_version}}'
+        helmchart_name: '{{values.helmchart_name}}'
+    spec:
+      project: argo-rollouts
+      source:
+        repoURL: '{{values.helmchart_url}}'
+        targetRevision: '{{values.helmchart_version}}' 
+        chart: '{{values.helmchart_name}}'
+        helm:
+          values: |
+              {{values.common_app_values}}
+      destination:
+        name: '{{name}}'
+        namespace: argo-rollouts
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - Validate=true
+          - PrunePropagationPolicy=foreground
+          - CreateNamespace=true
+          - PruneLast=true
+        retry:
+          limit: 2
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
